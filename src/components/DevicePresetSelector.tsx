@@ -47,7 +47,7 @@ const platformColors: Record<string, string> = {
 };
 
 export const DevicePresetSelector: React.FC = () => {
-  const { selectedDevices, toggleDevice, jobs, mode } = useAppStore();
+  const { selectedDevices, toggleDevice, jobs, mode, clearDevices } = useAppStore();
   const isGenerating = jobs.some(j => j.status === 'loading');
   const [activeTab, setActiveTab] = useState<PresetCategory>('responsive');
 
@@ -103,7 +103,7 @@ export const DevicePresetSelector: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
           {headerTitle}{' '}
           {(activeTab === 'social-image' || activeTab === 'social-video') && socialSelectedCount > 0 && (
@@ -113,9 +113,20 @@ export const DevicePresetSelector: React.FC = () => {
             </span>
           )}
         </h3>
-        {activeTab === 'social-video' && mode !== 'video' && (
-          <div className="text-xs text-yellow-300">Switch to Video mode to use these presets</div>
-        )}
+        <div className="flex items-center gap-4">
+          {selectedDevices.length > 0 && (
+            <button
+              onClick={clearDevices}
+              disabled={isGenerating}
+              className="text-xs text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-50"
+            >
+              Deselect all
+            </button>
+          )}
+          {activeTab === 'social-video' && mode !== 'video' && (
+            <div className="text-xs text-yellow-300">Switch to Video mode to use these presets</div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -12,7 +12,8 @@ export const handler: Handler = async (event) => {
       viewportWidth = 1440,
       viewportHeight = 900,
       duration = 10,
-      delay = 1
+      delay = 1,
+      userAgent = 'desktop'
     } = data;
 
     const accessKey = process.env.SCREENSHOTONE_ACCESS_KEY;
@@ -27,12 +28,22 @@ export const handler: Handler = async (event) => {
     apiUrl.searchParams.set('scenario', 'scroll');
     apiUrl.searchParams.set('duration', Math.min(duration, 30).toString()); // Max 30s
     apiUrl.searchParams.set('format', 'mp4');
-    apiUrl.searchParams.set('width', viewportWidth.toString());
-    apiUrl.searchParams.set('height', viewportHeight.toString());
+    apiUrl.searchParams.set('viewport_width', viewportWidth.toString());
+    apiUrl.searchParams.set('viewport_height', viewportHeight.toString());
     apiUrl.searchParams.set('delay', delay.toString());
     apiUrl.searchParams.set('block_ads', 'true');
     apiUrl.searchParams.set('block_cookie_banners', 'true');
     apiUrl.searchParams.set('wait_until', 'networkidle2');
+
+    if (userAgent === 'mobile') {
+      apiUrl.searchParams.set('user_agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1');
+    } else if (userAgent === 'tablet') {
+      apiUrl.searchParams.set('user_agent', 'Mozilla/5.0 (iPad; CPU OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1');
+    } else if (userAgent === 'social') {
+      // social presets get desktop Chrome UA (cleanest rendering at any size)
+      apiUrl.searchParams.set('user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    }
+    // 'desktop': no user_agent param needed, API default is desktop Chrome
 
     let response;
     try {

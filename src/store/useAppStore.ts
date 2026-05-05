@@ -15,6 +15,7 @@ interface AppState {
   setVideoOptions: (opts: Partial<VideoOptions>) => void;
   generateAll: () => Promise<void>;
   clearResults: () => void;
+  clearDevices: () => void;
 }
 
 const defaultDevices: DevicePreset[] = [
@@ -53,6 +54,24 @@ export const SOCIAL_VIDEO_PRESETS: DevicePreset[] = [
 ];
 
 export const ALL_PRESETS = [...defaultDevices, ...SOCIAL_IMAGE_PRESETS, ...SOCIAL_VIDEO_PRESETS];
+
+function resolveSocialVideoViewport(device: DevicePreset): { width: number; height: number; userAgent: string } {
+  const ratio = device.width / device.height;
+
+  if (ratio < 0.85) {
+    // Portrait / vertical: 9:16 (0.5625), 4:5 (0.8), 2:3 (0.667)
+    // → render as mobile phone
+    return { width: 393, height: 852, userAgent: 'mobile' };
+  } else if (ratio <= 1.15) {
+    // Square: 1:1 (1.0)
+    // → render as tablet (closest square-ish viewport)
+    return { width: 820, height: 820, userAgent: 'tablet' };
+  } else {
+    // Landscape: 16:9 (1.778), 1.91:1 (1.91), 4:3 (1.33)
+    // → render as desktop
+    return { width: 1440, height: 900, userAgent: 'desktop' };
+  }
+}
 
 export const useAppStore = create<AppState>((set, get) => ({
   url: '',
@@ -102,8 +121,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         URL.revokeObjectURL(job.resultUrl);
       }
     });
-    set({ jobs: [] });
+    set({
+      jobs: [],
+      selectedDevices: [defaultDevices[1], defaultDevices[5]], // Desktop + iPhone 14 Pro
+    });
   },
+
+  clearDevices: () => set({ selectedDevices: [] }),
 
   generateAll: async () => {
     const state = get();
@@ -134,19 +158,34 @@ export const useAppStore = create<AppState>((set, get) => ({
 
         try {
           // Prepare payload depending on mode
-          const payload = mode === 'screenshot' ? {
-            url,
-            viewportWidth: job.device.width,
-            viewportHeight: job.device.height,
-            deviceScaleFactor: job.device.dpr,
-            userAgent: job.device.userAgent,
-            ...screenshotOptions
-          } : {
-            url,
-            viewportWidth: job.device.width,
-            viewportHeight: job.device.height,
-            ...videoOptions
-          };
+          let payload: Record<string, unknown>;
+
+          if (mode === 'screenshot') {
+            payload = {
+              url,
+              viewportWidth: job.device.width,
+              viewportHeight: job.device.height,
+              deviceScaleFactor: job.device.dpr,
+              userAgent: job.device.userAgent,
+              ...screenshotOptions
+            };
+          } else {
+            // For video: social-video presets must be mapped to the closest
+            // responsive viewport so the page renders correctly (mobile/tablet/desktop UA).
+            // Responsive presets use their own dimensions and userAgent directly.
+            const isSocialVideo = job.device.category === 'social-video';
+            const resolvedViewport = isSocialVideo
+              ? resolveSocialVideoViewport(job.device)
+              : { width: job.device.width, height: job.device.height, userAgent: job.device.userAgent };
+
+            payload = {
+              url,
+              viewportWidth: resolvedViewport.width,
+              viewportHeight: resolvedViewport.height,
+              userAgent: resolvedViewport.userAgent,
+              ...videoOptions
+            };
+          }
 
           const response = await fetch(endpoint, {
             method: 'POST',
