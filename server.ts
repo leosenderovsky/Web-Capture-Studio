@@ -1,9 +1,12 @@
+import dotenv from 'dotenv';
+import path from 'path';
+// Explicitly load .env from the current working directory
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { handler as screenshotHandler } from './netlify/functions/screenshot.js';
 import { handler as videoHandler } from './netlify/functions/video.js';
 import path from 'path';
-import 'dotenv/config';
 
 async function startServer() {
   const app = express();
@@ -11,6 +14,19 @@ async function startServer() {
 
   // Make sure we can parse large payloads if ever needed, but standard is fine
   app.use(express.json());
+
+  // Debug: print whether required API keys are present (masked)
+  const maskKey = (k?: string) => {
+    if (!k) return 'MISSING';
+    if (k.length <= 8) return '****';
+    return `${k.slice(0,4)}...${k.slice(-4)}`;
+  };
+
+  console.log('ENV DEBUG:', {
+    NODE_ENV: process.env.NODE_ENV || 'development',
+    SCREENSHOTONE_ACCESS_KEY: maskKey(process.env.SCREENSHOTONE_ACCESS_KEY),
+    BROWSERLESS_API_KEY: maskKey(process.env.BROWSERLESS_API_KEY),
+  });
 
   // Adapt Express request to Netlify Event format
   const adaptRequest = (req: express.Request) => ({

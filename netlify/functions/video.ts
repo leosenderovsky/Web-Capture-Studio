@@ -68,8 +68,8 @@ export const handler: Handler = async (event) => {
       addScriptTag: [{ content: scrollScript }]
     };
 
-    // Use production-sfo for the newer REST APIs to avoid 404s on chrome.browserless.io
-    const apiUrl = `https://production-sfo.browserless.io/screencast?token=${apiKey}`;
+    // Use chrome.browserless.io REST endpoint for screencast
+    const apiUrl = `https://chrome.browserless.io/screencast?token=${apiKey}`;
 
     let response;
     try {

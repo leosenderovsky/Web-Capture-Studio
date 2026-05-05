@@ -24,7 +24,7 @@ export default function App() {
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
               <Camera className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-white tracking-tight">WebSnap Studio</h1>
+            <h1 className="text-xl font-bold text-white tracking-tight">Web Capture Studio</h1>
           </div>
           
           <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">

@@ -1,11 +1,16 @@
+export type PresetCategory = 'responsive' | 'social-image' | 'social-video';
+
 export interface DevicePreset {
   id: string;
   label: string;
   width: number;
   height: number;
   dpr: number;
-  userAgent: 'desktop' | 'tablet' | 'mobile';
+  userAgent: 'desktop' | 'tablet' | 'mobile' | 'social';
   icon: string;
+  category: PresetCategory;
+  platform?: string;
+  aspectRatio?: string;
 }
 
 export interface ScreenshotOptions {

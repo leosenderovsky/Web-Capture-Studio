@@ -1,4 +1,4 @@
-# WebSnap Studio
+# Web Capture Studio
 
 A powerful web application that lets you enter any public website URL and generate responsive screenshots and smooth automatic scroll videos across multiple devices.
 
