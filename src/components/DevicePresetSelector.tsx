@@ -19,8 +19,8 @@ type Tab = { key: PresetCategory; label: string; Icon: any; showWhen?: 'always' 
 
 const tabs: Tab[] = [
   { key: 'responsive', label: 'Responsive', Icon: Monitor, showWhen: 'always' },
-  { key: 'social-image', label: 'Social · Image', Icon: ImageIcon, showWhen: 'always' },
-  { key: 'social-video', label: 'Social · Video', Icon: Video, showWhen: 'always' },
+  { key: 'social-image', label: 'Social Image', Icon: ImageIcon, showWhen: 'always' },
+  { key: 'social-video', label: 'Social Video', Icon: Video, showWhen: 'always' },
 ];
 
 const iconMap: Record<string, any> = {
@@ -53,12 +53,11 @@ export const DevicePresetSelector: React.FC = () => {
 
   const visibleTabs = useMemo(() => tabs, []);
 
-  const activeIndex = visibleTabs.findIndex(t => t.key === activeTab);
   const headerTitle = activeTab === 'responsive'
     ? 'Devices & Resolutions'
     : activeTab === 'social-image'
-      ? 'Social Media · Image Formats'
-      : 'Social Media · Video Formats';
+      ? 'Social Media Image Formats'
+      : 'Social Media Video Formats';
 
   const socialSelectedCount = selectedDevices.filter(d => d.category === 'social-image' || d.category === 'social-video').length;
 
@@ -73,14 +72,16 @@ export const DevicePresetSelector: React.FC = () => {
       <div className="mb-3">
         <div className="relative w-full bg-slate-800/30 rounded-md p-1 overflow-hidden" aria-hidden>
           <div
-            className="absolute inset-1 bg-slate-700 rounded-md transition-all duration-200"
+            className="absolute bg-slate-700 rounded-md transition-all duration-300 ease-out"
             style={{
-              width: `${100 / visibleTabs.length}%`,
-              left: `${activeIndex * (100 / visibleTabs.length)}%`
+              top: activeTab === 'responsive' ? '4px' : 'calc(50% + 2px)',
+              left: activeTab === 'social-video' ? 'calc(50% + 2px)' : '4px',
+              width: activeTab === 'responsive' ? 'calc(100% - 8px)' : 'calc(50% - 6px)',
+              height: 'calc(50% - 6px)',
             }}
           />
-          <div className="relative z-10 grid" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, 1fr)` }}>
-            {visibleTabs.map((t) => {
+          <div className="relative z-10 grid grid-cols-2 gap-1">
+            {visibleTabs.map((t, idx) => {
               const TabIcon = t.Icon;
               const isActive = t.key === activeTab;
               return (
@@ -89,7 +90,8 @@ export const DevicePresetSelector: React.FC = () => {
                   onClick={() => setActiveTab(t.key)}
                   className={twMerge(clsx(
                     'min-w-0 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-base font-semibold transition-colors whitespace-normal text-center',
-                    isActive ? 'text-slate-100' : 'text-slate-300 hover:text-slate-100'
+                    isActive ? 'text-slate-100' : 'text-slate-300 hover:text-slate-100',
+                    idx === 0 && 'col-span-2'
                   ))}
                 >
                   <TabIcon className={clsx('w-5 h-5', isActive ? 'text-slate-100' : 'text-slate-300')} />

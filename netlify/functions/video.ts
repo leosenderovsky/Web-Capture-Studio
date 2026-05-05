@@ -12,78 +12,37 @@ export const handler: Handler = async (event) => {
       viewportWidth = 1440,
       viewportHeight = 900,
       duration = 10,
-      fps = 30,
-      scrollSpeed = 'medium',
-      delay = 0
+      delay = 1
     } = data;
 
-    const apiKey = process.env.BROWSERLESS_API_KEY;
-    if (!apiKey) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'Missing BROWSERLESS_API_KEY' }) };
+    const accessKey = process.env.SCREENSHOTONE_ACCESS_KEY;
+    if (!accessKey) {
+      return { statusCode: 500, body: JSON.stringify({ error: 'Missing SCREENSHOTONE_ACCESS_KEY' }) };
     }
 
-    const durationMs = duration * 1000;
-    const delayMs = delay * 1000;
-
-    const scrollScript = `
-      (async () => {
-        const reqDuration = ${durationMs};
-        const maxScroll = Math.max(0, document.body.scrollHeight - window.innerHeight);
-        const distance = maxScroll; 
-        let startTime = performance.now();
-        
-        return new Promise((resolve) => {
-          function step(currentTime) {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / reqDuration, 1);
-            const currentScroll = distance * progress;
-            window.scrollTo(0, currentScroll);
-            if (progress < 1) {
-              requestAnimationFrame(step);
-            } else {
-              resolve();
-            }
-          }
-          requestAnimationFrame(step);
-        });
-      })();
-    `;
-
-    const browserlessPayload = {
-      url,
-      options: {
-        type: 'mp4',
-        quality: 100,
-        frameRate: fps
-      },
-      gotoOptions: {
-        waitUntil: 'networkidle2',
-        timeout: 30000
-      },
-      viewport: {
-        width: viewportWidth,
-        height: viewportHeight
-      },
-      waitForTimeout: delayMs + durationMs + 1000,
-      addScriptTag: [{ content: scrollScript }]
-    };
-
-    // Use chrome.browserless.io REST endpoint for screencast
-    const apiUrl = `https://chrome.browserless.io/screencast?token=${apiKey}`;
+    // ScreenshotOne Animate API is much more reliable for scrolling videos
+    const apiUrl = new URL('https://api.screenshotone.com/animate');
+    apiUrl.searchParams.set('access_key', accessKey);
+    apiUrl.searchParams.set('url', url);
+    apiUrl.searchParams.set('scenario', 'scroll');
+    apiUrl.searchParams.set('duration', Math.min(duration, 30).toString()); // Max 30s
+    apiUrl.searchParams.set('format', 'mp4');
+    apiUrl.searchParams.set('width', viewportWidth.toString());
+    apiUrl.searchParams.set('height', viewportHeight.toString());
+    apiUrl.searchParams.set('delay', delay.toString());
+    apiUrl.searchParams.set('block_ads', 'true');
+    apiUrl.searchParams.set('block_cookie_banners', 'true');
+    apiUrl.searchParams.set('wait_until', 'networkidle2');
 
     let response;
     try {
-      response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(browserlessPayload),
+      response = await fetch(apiUrl.toString(), {
+        method: 'GET', // ScreenshotOne animate uses GET for these params
         signal: AbortSignal.timeout(120000)
       });
     } catch (e: any) {
       if (e.name === 'TimeoutError') {
-         return { statusCode: 504, body: JSON.stringify({ error: 'Timeout - try a simpler page or shorter duration' }) };
+         return { statusCode: 504, body: JSON.stringify({ error: 'Timeout - video generation took too long' }) };
       }
       throw e;
     }
@@ -113,3 +72,6 @@ export const handler: Handler = async (event) => {
     };
   }
 };
+
+
+
