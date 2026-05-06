@@ -63,10 +63,11 @@ export const ResultCard: React.FC<{ job: Job, isVideo: boolean }> = ({ job, isVi
         <div className="relative flex-1 bg-black overflow-hidden flex items-center justify-center min-h-[200px]">
           {isVideo ? (
             <video 
-              src={job.resultUrl} 
               controls 
               className="w-full h-full object-contain"
-            />
+            >
+              <source src={job.resultUrl} type="video/mp4" />
+            </video>
           ) : (
             <div className="w-full h-full relative group/img cursor-zoom-in" onClick={() => setIsFullscreen(true)}>
               <img 

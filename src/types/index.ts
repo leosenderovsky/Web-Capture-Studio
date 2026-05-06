@@ -24,7 +24,6 @@ export interface ScreenshotOptions {
 
 export interface VideoOptions {
   duration: 5 | 10 | 20 | 30;
-  fps: 24 | 30 | 60;
   scrollSpeed: 'slow' | 'medium' | 'fast';
   delay: number;
 }
