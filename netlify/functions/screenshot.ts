@@ -19,7 +19,9 @@ export const handler: Handler = async (event) => {
       blockAds = true,
       blockCookieBanners = true,
       darkMode = false,
-      userAgent = 'desktop'
+      userAgent = 'desktop',
+      imageWidth,   // optional: output image width (used for social presets)
+      imageHeight,  // optional: output image height (used for social presets)
     } = data;
 
     const accessKey = process.env.SCREENSHOTONE_ACCESS_KEY;
@@ -42,6 +44,14 @@ export const handler: Handler = async (event) => {
     apiUrl.searchParams.set('block_ads', blockAds ? 'true' : 'false');
     apiUrl.searchParams.set('block_cookie_banners', blockCookieBanners ? 'true' : 'false');
     apiUrl.searchParams.set('dark_mode', darkMode ? 'true' : 'false');
+    
+    // If imageWidth/imageHeight are provided (social presets), set output image size.
+    // This makes ScreenshotOne scale/crop the output to the social format dimensions
+    // while the page itself renders at the responsive viewport set above.
+    if (imageWidth && imageHeight) {
+      apiUrl.searchParams.set('image_width', imageWidth.toString());
+      apiUrl.searchParams.set('image_height', imageHeight.toString());
+    }
     
     apiUrl.searchParams.set('wait_until', 'networkidle2');
 

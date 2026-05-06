@@ -55,21 +55,38 @@ export const SOCIAL_VIDEO_PRESETS: DevicePreset[] = [
 
 export const ALL_PRESETS = [...defaultDevices, ...SOCIAL_IMAGE_PRESETS, ...SOCIAL_VIDEO_PRESETS];
 
-function resolveSocialVideoViewport(device: DevicePreset): { width: number; height: number; userAgent: string } {
+/**
+ * Maps any social preset (social-image or social-video) to the closest
+ * responsive viewport that will render the website correctly in that layout.
+ *
+ * Mapping logic based on aspect ratio:
+ *   ratio < 0.9   → portrait/vertical → mobile phone (iPhone 14 Pro)
+ *   ratio 0.9–1.1 → square or near-square → tablet (iPad)
+ *   ratio > 1.1   → landscape → desktop
+ *
+ * For video, this IS the output viewport (ScreenshotOne animate has no separate output size).
+ * For screenshots, this is the RENDER viewport; the social dimensions are sent separately
+ * as imageWidth/imageHeight to produce the correctly-sized output image.
+ */
+function resolveToResponsiveViewport(device: DevicePreset): {
+  renderWidth: number;
+  renderHeight: number;
+  userAgent: 'mobile' | 'tablet' | 'desktop';
+} {
   const ratio = device.width / device.height;
 
-  if (ratio < 0.85) {
-    // Portrait / vertical: 9:16 (0.5625), 4:5 (0.8), 2:3 (0.667)
+  if (ratio < 0.9) {
+    // Portrait formats: 9:16 (0.5625), 4:5 (0.8), 2:3 (0.667)
     // → render as mobile phone
-    return { width: 393, height: 852, userAgent: 'mobile' };
-  } else if (ratio <= 1.15) {
-    // Square: 1:1 (1.0)
-    // → render as tablet (closest square-ish viewport)
-    return { width: 820, height: 820, userAgent: 'tablet' };
+    return { renderWidth: 393, renderHeight: 852, userAgent: 'mobile' };
+  } else if (ratio <= 1.1) {
+    // Square formats: 1:1 (1.0)
+    // → render as tablet (closest square-ish, page layout adapts to tablet breakpoints)
+    return { renderWidth: 768, renderHeight: 1024, userAgent: 'tablet' };
   } else {
-    // Landscape: 16:9 (1.778), 1.91:1 (1.91), 4:3 (1.33)
+    // Landscape formats: 16:9 (1.778), 1.91:1 (1.91), 4:3 (1.333)
     // → render as desktop
-    return { width: 1440, height: 900, userAgent: 'desktop' };
+    return { renderWidth: 1440, renderHeight: 900, userAgent: 'desktop' };
   }
 }
 
@@ -160,31 +177,62 @@ export const useAppStore = create<AppState>((set, get) => ({
           // Prepare payload depending on mode
           let payload: Record<string, unknown>;
 
-          if (mode === 'screenshot') {
-            payload = {
-              url,
-              viewportWidth: job.device.width,
-              viewportHeight: job.device.height,
-              deviceScaleFactor: job.device.dpr,
-              userAgent: job.device.userAgent,
-              ...screenshotOptions
-            };
-          } else {
-            // For video: social-video presets must be mapped to the closest
-            // responsive viewport so the page renders correctly (mobile/tablet/desktop UA).
-            // Responsive presets use their own dimensions and userAgent directly.
-            const isSocialVideo = job.device.category === 'social-video';
-            const resolvedViewport = isSocialVideo
-              ? resolveSocialVideoViewport(job.device)
-              : { width: job.device.width, height: job.device.height, userAgent: job.device.userAgent };
+          const isSocialPreset =
+            job.device.category === 'social-image' ||
+            job.device.category === 'social-video';
 
-            payload = {
-              url,
-              viewportWidth: resolvedViewport.width,
-              viewportHeight: resolvedViewport.height,
-              userAgent: resolvedViewport.userAgent,
-              ...videoOptions
-            };
+          if (mode === 'screenshot') {
+            if (isSocialPreset) {
+              // Social presets: render at the closest responsive viewport,
+              // but output at the actual social format dimensions.
+              const resolved = resolveToResponsiveViewport(job.device);
+              payload = {
+                url,
+                viewportWidth: resolved.renderWidth,
+                viewportHeight: resolved.renderHeight,
+                deviceScaleFactor: 1,
+                userAgent: resolved.userAgent,
+                // imageWidth/imageHeight tell ScreenshotOne to scale the output
+                // to the social format while keeping the correct page layout.
+                imageWidth: job.device.width,
+                imageHeight: job.device.height,
+                ...screenshotOptions,
+              };
+            } else {
+              // Responsive presets: use their own dimensions and UA directly.
+              payload = {
+                url,
+                viewportWidth: job.device.width,
+                viewportHeight: job.device.height,
+                deviceScaleFactor: job.device.dpr,
+                userAgent: job.device.userAgent,
+                ...screenshotOptions,
+              };
+            }
+          } else {
+            // Video mode
+            if (isSocialPreset) {
+              // Social presets: render at the closest responsive viewport.
+              // For video, ScreenshotOne animate has no separate output size —
+              // the render viewport IS the output viewport.
+              const resolved = resolveToResponsiveViewport(job.device);
+              payload = {
+                url,
+                viewportWidth: resolved.renderWidth,
+                viewportHeight: resolved.renderHeight,
+                userAgent: resolved.userAgent,
+                ...videoOptions,
+              };
+            } else {
+              // Responsive presets: use their own dimensions and UA directly.
+              payload = {
+                url,
+                viewportWidth: job.device.width,
+                viewportHeight: job.device.height,
+                userAgent: job.device.userAgent,
+                ...videoOptions,
+              };
+            }
           }
 
           const response = await fetch(endpoint, {
