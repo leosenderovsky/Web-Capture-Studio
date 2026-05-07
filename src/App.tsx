@@ -33,8 +33,19 @@ export default function App() {
             <ScreenshotOptions />
             <VideoOptions />
             
-            <div className="mt-12 text-xs text-slate-600 text-center flex flex-col gap-1 items-center justify-center">
-              <p>Powered by ScreenshotOne & Browserless</p>
+            <div className="mt-12 text-[10px] text-slate-600 text-center flex flex-col gap-1 items-center justify-center">
+              <p>
+                © 2026 · Developed by{' '}
+                <a 
+                  href="https://leosenderovsky.com.ar/ia/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-500/70 hover:text-blue-400 transition-colors"
+                >
+                  sender.ia
+                </a>
+              </p>
+              <p>Powered by ScreenshotOne</p>
             </div>
           </div>
         </aside>

@@ -24,7 +24,6 @@ async function startServer() {
   console.log('ENV DEBUG:', {
     NODE_ENV: process.env.NODE_ENV || 'development',
     SCREENSHOTONE_ACCESS_KEY: maskKey(process.env.SCREENSHOTONE_ACCESS_KEY),
-    BROWSERLESS_API_KEY: maskKey(process.env.BROWSERLESS_API_KEY),
   });
 
   // Adapt Express request to Netlify Event format
@@ -50,9 +49,6 @@ async function startServer() {
 
   app.post('/api/video', async (req, res) => {
     try {
-      if (!process.env.BROWSERLESS_API_KEY) {
-        console.warn('BROWSERLESS_API_KEY is missing');
-      }
       const event = adaptRequest(req);
       const response = await videoHandler(event as any, {} as any) as any;
       res.status(response.statusCode);
