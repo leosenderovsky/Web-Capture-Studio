@@ -6,7 +6,6 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { handler as screenshotHandler } from './netlify/functions/screenshot.js';
 import { handler as videoHandler } from './netlify/functions/video.js';
-import path from 'path';
 
 async function startServer() {
   const app = express();

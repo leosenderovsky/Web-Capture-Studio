@@ -3,25 +3,33 @@ import { useAppStore } from '../store/useAppStore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+interface PillProps {
+  key?: React.Key;
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  disabled?: boolean;
+}
+
+const Pill = ({ active, onClick, children, disabled }: PillProps) => (
+  <button
+    disabled={disabled}
+    onClick={onClick}
+    className={twMerge(clsx(
+      'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+      active ? 'bg-slate-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200',
+      disabled && 'opacity-50 cursor-not-allowed'
+    ))}
+  >
+    {children}
+  </button>
+);
+
 export const VideoOptions = () => {
   const { videoOptions: opts, setVideoOptions: setOpts, mode, jobs } = useAppStore();
   if (mode !== 'video') return null;
 
   const isGenerating = jobs.some(j => j.status === 'loading');
-
-  const Pill = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button
-      disabled={isGenerating}
-      onClick={onClick}
-      className={twMerge(clsx(
-        'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-        active ? 'bg-slate-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200',
-        isGenerating && 'opacity-50 cursor-not-allowed'
-      ))}
-    >
-      {children}
-    </button>
-  );
 
   return (
     <div className="space-y-6">
@@ -34,7 +42,12 @@ export const VideoOptions = () => {
           <span className="text-slate-400">Duration</span>
           <div className="flex gap-2">
             {([5, 10, 20, 30] as const).map(d => (
-              <Pill key={d} active={opts.duration === d} onClick={() => setOpts({ duration: d })}>
+              <Pill 
+                key={d} 
+                active={opts.duration === d} 
+                onClick={() => setOpts({ duration: d })}
+                disabled={isGenerating}
+              >
                 {d}s
               </Pill>
             ))}
@@ -45,7 +58,12 @@ export const VideoOptions = () => {
           <span className="text-slate-400">Scroll Speed</span>
           <div className="flex gap-2">
             {(['slow', 'medium', 'fast'] as const).map(s => (
-              <Pill key={s} active={opts.scrollSpeed === s} onClick={() => setOpts({ scrollSpeed: s })}>
+              <Pill 
+                key={s} 
+                active={opts.scrollSpeed === s} 
+                onClick={() => setOpts({ scrollSpeed: s })}
+                disabled={isGenerating}
+              >
                 {s.charAt(0).toUpperCase() + s.slice(1)}
               </Pill>
             ))}
